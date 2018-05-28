@@ -1,0 +1,13 @@
+{
+  "name": "fetch-adapter",
+  "version": "0.1.0",
+  "main": "index.js",
+  "author": "Paul Chavard",
+  "license": "MIT",
+  "dependencies": {
+    "esm": "^3.0.38"
+  },
+  "devDependencies": {
+    "mocha": "^5.2.0"
+  }
+}
