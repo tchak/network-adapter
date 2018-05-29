@@ -35,6 +35,10 @@ export default class RequestBuilder {
     return this.clone({ timeout });
   }
 
+  reload() {
+    return this.clone({ cache: false });
+  }
+
   signal(signal) {
     return this.clone({ signal });
   }
@@ -93,6 +97,7 @@ export default class RequestBuilder {
 
   method(method) {
     let params = merge(this._params, { method });
-    return this._fetch(params);
+    let { timeout, cache } = params;
+    return this._fetch(params, { timeout, cache });
   }
 }

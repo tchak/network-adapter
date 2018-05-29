@@ -18,32 +18,34 @@ export default class Adapter {
     if (cache) {
       this.cache = cache;
     }
+
+    this.fetch = this.fetch.bind(this);
   }
 
-  async methodForRequest({ method = HTTP_METHOD_GET }) {
+  methodForRequest({ method = HTTP_METHOD_GET }) {
     return method;
   }
 
-  async headersForRequest({ headers }) {
+  headersForRequest({ headers }) {
     return merge(this.headers, headers);
   }
 
-  async pathForRequest({ url }) {
+  pathForRequest({ url }) {
     return url;
   }
 
-  async queryForRequest({ query }) {
+  queryForRequest({ query }) {
     return query;
   }
 
-  async bodyForRequest({ body }) {
+  bodyForRequest({ body }) {
     if (typeof body === 'string') {
       return body;
     }
     return JSON.stringify(body);
   }
 
-  async optionsForRequest({ options }) {
+  optionsForRequest({ options }) {
     let { mode = 'cors', credentials = 'same-origin' } = options || {
       mode: 'cors',
       credentials: 'same-origin'
@@ -55,15 +57,15 @@ export default class Adapter {
     };
   }
 
-  async signalForRequest({ signal }) {
+  signalForRequest({ signal }) {
     return signal;
   }
 
-  async normalizeSuccess(params, body) {
+  normalizeSuccess(params, body) {
     return body;
   }
 
-  async normalizeError(params, body) {
+  normalizeError(params, body) {
     return body;
   }
 
@@ -77,8 +79,12 @@ export default class Adapter {
     return this.normalizeError(params, body, response);
   }
 
-  request(params) {
-    return new RequestBuilder(params => this.fetch(params), params);
+  request() {
+    return new RequestBuilder(this.fetch);
+  }
+
+  url(url) {
+    return this.request().url(url);
   }
 
   fetch(params, options = {}) {
@@ -89,11 +95,13 @@ export default class Adapter {
   }
 
   async urlForRequest(options) {
-    let path = await this.pathForRequest(options);
-    let query = await this.queryForRequest(options);
-    let url = this.buildURL(path);
-
-    return addQueryParams(url, query);
+    return Promise.all([
+      this.pathForRequest(options),
+      this.queryForRequest(options)
+    ]).then(([path, query]) => {
+      const url = this.buildURL(path);
+      return addQueryParams(url, query);
+    });
   }
 
   buildURL(path) {
