@@ -1,9 +1,8 @@
+import assign from 'object-assign';
+
 const objectPrototype = Object.getPrototypeOf({});
 const hasOwnProperty = objectPrototype.hasOwnProperty;
 const toString = objectPrototype.toString;
-
-function assign(...objs) {
-}
 
 export default function merge(...objs) {
   return assign(Object.create(null), ...objs);

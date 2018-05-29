@@ -1,8 +1,8 @@
-import serializeQueryParams from './serialize-query-params';
+import param from 'jquery-param';
 
 export default function addQueryParams(url, queryParams) {
   if (queryParams && Object.keys(queryParams).length) {
-    queryParams = serializeQueryParams(queryParams);
+    queryParams = param(queryParams);
     let delimiter = url.indexOf('?') > -1 ? '&' : '?';
     return `${url}${delimiter}${queryParams}`;
   }

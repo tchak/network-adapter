@@ -5,9 +5,16 @@
   "author": "Paul Chavard",
   "license": "MIT",
   "dependencies": {
-    "esm": "^3.0.38"
+    "esm": "^3.0.38",
+    "jquery-param": "^1.0.1",
+    "object-assign": "^4.1.1"
   },
   "devDependencies": {
-    "mocha": "^5.2.0"
+    "abortcontroller-polyfill": "^1.1.9",
+    "node-fetch": "^2.1.2",
+    "qunit": "^2.6.1"
+  },
+  "scripts": {
+    "test": "qunit --require esm"
   }
 }

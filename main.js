@@ -4,17 +4,23 @@ import addQueryParams from './src/add-query-params';
 import signalForRequest from './src/signal-for-request';
 import merge from './src/merge';
 
+const HTTP_METHOD_GET = 'GET';
+const HTTP_METHOD_HEAD = 'HEAD';
+
 export default class Adapter {
-  constructor({ timeout, headers } = {}) {
+  constructor({ timeout, headers, cache } = {}) {
     if (timeout) {
       this.timeout = timeout;
     }
     if (headers) {
       this.headers = headers;
     }
+    if (cache) {
+      this.cache = cache;
+    }
   }
 
-  async methodForRequest({ method = 'get' }) {
+  async methodForRequest({ method = HTTP_METHOD_GET }) {
     return method;
   }
 
@@ -35,6 +41,22 @@ export default class Adapter {
       return body;
     }
     return JSON.stringify(body);
+  }
+
+  async optionsForRequest({ options }) {
+    let { mode = 'cors', credentials = 'same-origin' } = options || {
+      mode: 'cors',
+      credentials: 'same-origin'
+    };
+
+    return {
+      mode,
+      credentials
+    };
+  }
+
+  async signalForRequest({ signal }) {
+    return signal;
   }
 
   async normalizeSuccess(params, body) {
@@ -59,10 +81,9 @@ export default class Adapter {
     return new RequestBuilder(params => this.fetch(params), params);
   }
 
-  fetch(params) {
-    let { signal, timeout } = params;
+  fetch(params, options = {}) {
     let response = this.requestFor(params).then(request =>
-      this.makeRequest(request, { signal, timeout })
+      this.makeRequest(request, options)
     );
     return new ResponseProxy(response, this.normalize(params));
   }
@@ -73,18 +94,6 @@ export default class Adapter {
     let url = this.buildURL(path);
 
     return addQueryParams(url, query);
-  }
-
-  async optionsForRequest({ options }) {
-    let { mode = 'cors', credentials = 'same-origin' } = options || {
-      mode: 'cors',
-      credentials: 'same-origin'
-    };
-
-    return {
-      mode,
-      credentials
-    };
   }
 
   buildURL(path) {
@@ -126,20 +135,45 @@ export default class Adapter {
     return url;
   }
 
-  makeRequest(request, { signal, timeout }) {
-    const { fetch, AbortController } = Adapter;
+  shouldCacheRequest(request) {
+    return this.cache && request.method === HTTP_METHOD_GET;
+  }
 
-    let resolve, reject;
-    [signal, resolve, reject] = signalForRequest({ signal, timeout }, AbortController);
+  async makeRequest(request, options = {}) {
+    const { fetch, AbortController } = Adapter;
+    const cache = options.cache !== false && this.shouldCacheRequest(request);
+
+    if (cache) {
+      let response = await this.cache.match(request);
+      if (response) {
+        return response;
+      }
+    }
+
+    let [signal, teardown] = signalForRequest(request.signal, options.timeout, AbortController);
 
     if (signal) {
       request.signal = signal;
     }
-    if (resolve && reject) {
-      return fetch(request).then(resolve, reject);
+
+    if (!teardown && !cache) {
+      return fetch(request);
     }
 
-    return fetch(request);
+    try {
+      let response = await fetch(request);
+      if (teardown) {
+        teardown();
+      }
+      if (cache) {
+        await this.cache.put(request, response);
+      }
+      return response;
+    } finally {
+      if (teardown) {
+        teardown();
+      }
+    }
   }
 
   async requestFor(params) {
@@ -148,9 +182,10 @@ export default class Adapter {
     params = Object.freeze(params);
 
     let method = await this.methodForRequest(params);
-    let url = await this.urlForRequest(params);
+    const url = await this.urlForRequest(params);
     let headers = await this.headersForRequest(params);
-    let options = await this.optionsForRequest(params);
+    const options = await this.optionsForRequest(params);
+    const signal = await this.signalForRequest(params);
 
     method = method.toUpperCase();
     headers = new Headers(headers);
@@ -158,7 +193,11 @@ export default class Adapter {
     options.method = method;
     options.headers = headers;
 
-    if (method === 'GET' || method === 'HEAD') {
+    if (signal) {
+      options.signal = signal;
+    }
+
+    if (method === HTTP_METHOD_GET || method === HTTP_METHOD_HEAD) {
       if (params.body) {
         throw new Error(`${method} request with body`);
       }
