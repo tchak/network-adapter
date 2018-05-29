@@ -1,3 +1,5 @@
+import headersToObject from './headers-to-object';
+
 export default class ResponseProxy {
   constructor(promise, normalize) {
     this.promise = promise;
@@ -16,6 +18,12 @@ export default class ResponseProxy {
     return respond(response, body);
   }
 
+  async blob() {
+    let response = await this.promise;
+    let body = await readBody(response, 'blob', this.normalize);
+    return respond(response, body);
+  }
+
   async response() {
     let response = await this.promise;
     let { ok, status, statusText, headers } = response;
@@ -26,7 +34,8 @@ export default class ResponseProxy {
       statusText,
       headers: headersToObject(headers),
       json: () => readBody(response, 'json', this.normalize),
-      text: () => readBody(response, 'text', this.normalize)
+      text: () => readBody(response, 'text', this.normalize),
+      blob: () => readBody(response, 'blob', this.normalize)
     };
   }
 
@@ -59,11 +68,4 @@ function readBody(response, type, normalize) {
     return null;
   }
   return response[type]().then(body => normalize(body, response));
-}
-
-function headersToObject(headers) {
-  return Array.from(headers).reduce((headers, [key, value]) => {
-    headers[key] = value;
-    return headers;
-  }, {});
 }
