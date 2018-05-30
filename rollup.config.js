@@ -9,6 +9,7 @@ export default [
       file: 'dist/browser.js',
       format: 'amd'
     },
+    exports: 'named',
     plugins: [
       nodeResolve({
         jsnext: true,
@@ -23,6 +24,7 @@ export default [
       file: 'dist/browser-old.js',
       format: 'amd'
     },
+    exports: 'named',
     plugins: [
       nodeResolve({
         jsnext: true,
