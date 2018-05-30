@@ -1,17 +1,6 @@
 import { module, test } from 'qunit';
-import fetch, { Headers, Request } from 'node-fetch';
-import { AbortController, abortableFetch } from 'abortcontroller-polyfill/dist/cjs-ponyfill';
-import Adapter from '../main.js';
-
-const patched = abortableFetch({
-  fetch,
-  Request
-});
-
-Adapter.fetch = patched.fetch;
-Adapter.Request = patched.Request;
-Adapter.Headers = Headers;
-Adapter.AbortController = AbortController;
+import { AbortController } from 'abortcontroller-polyfill/dist/cjs-ponyfill';
+import Adapter from '../node.js';
 
 module('FetchAdapter', function(hooks) {
   hooks.beforeEach(function() {

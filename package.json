@@ -1,20 +1,33 @@
 {
-  "name": "fetch-adapter",
+  "name": "network-adapter",
   "version": "0.1.0",
   "main": "index.js",
+  "browser": "dist/browser-old.js",
+  "module": "main.js",
   "author": "Paul Chavard",
   "license": "MIT",
   "dependencies": {
+    "abortcontroller-polyfill": "^1.1.9",
     "esm": "^3.0.38",
     "jquery-param": "^1.0.1",
+    "node-fetch": "^2.1.2",
     "object-assign": "^4.1.1"
   },
   "devDependencies": {
-    "abortcontroller-polyfill": "^1.1.9",
-    "node-fetch": "^2.1.2",
-    "qunit": "^2.6.1"
+    "babel-core": "^6.26.3",
+    "babel-plugin-external-helpers": "^6.22.0",
+    "babel-preset-env": "^1.7.0",
+    "prettier": "^1.13.2",
+    "qunit": "^2.6.1",
+    "rollup": "^0.59.4",
+    "rollup-plugin-babel": "^3.0.4",
+    "rollup-plugin-commonjs": "^9.1.3",
+    "rollup-plugin-node-resolve": "^3.3.0"
   },
   "scripts": {
-    "test": "qunit --require esm"
+    "build": "rollup -c",
+    "test": "qunit --require esm",
+    "prettier": "prettier main.js node.js src/* test/* --write",
+    "prepublish": "yarn test && yarn build"
   }
 }

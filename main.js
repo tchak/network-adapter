@@ -4,6 +4,8 @@ import addQueryParams from './src/add-query-params';
 import signalForRequest from './src/signal-for-request';
 import merge from './src/merge';
 
+export { default as Cache } from './src/cache';
+
 const HTTP_METHOD_GET = 'GET';
 const HTTP_METHOD_HEAD = 'HEAD';
 
@@ -22,30 +24,30 @@ export default class Adapter {
     this.fetch = this.fetch.bind(this);
   }
 
-  methodForRequest({ method = HTTP_METHOD_GET }) {
+  async methodForRequest({ method = HTTP_METHOD_GET }) {
     return method;
   }
 
-  headersForRequest({ headers }) {
+  async headersForRequest({ headers }) {
     return merge(this.headers, headers);
   }
 
-  pathForRequest({ url }) {
+  async pathForRequest({ url }) {
     return url;
   }
 
-  queryForRequest({ query }) {
+  async queryForRequest({ query }) {
     return query;
   }
 
-  bodyForRequest({ body }) {
+  async bodyForRequest({ body }) {
     if (typeof body === 'string') {
       return body;
     }
     return JSON.stringify(body);
   }
 
-  optionsForRequest({ options }) {
+  async optionsForRequest({ options }) {
     let { mode = 'cors', credentials = 'same-origin' } = options || {
       mode: 'cors',
       credentials: 'same-origin'
@@ -57,15 +59,15 @@ export default class Adapter {
     };
   }
 
-  signalForRequest({ signal }) {
+  async signalForRequest({ signal }) {
     return signal;
   }
 
-  normalizeSuccess(params, body) {
+  async normalizeSuccess(params, body) {
     return body;
   }
 
-  normalizeError(params, body) {
+  async normalizeError(params, body) {
     return body;
   }
 
@@ -95,13 +97,10 @@ export default class Adapter {
   }
 
   async urlForRequest(options) {
-    return Promise.all([
-      this.pathForRequest(options),
-      this.queryForRequest(options)
-    ]).then(([path, query]) => {
-      const url = this.buildURL(path);
-      return addQueryParams(url, query);
-    });
+    const path = await this.pathForRequest(options);
+    const query = await this.queryForRequest(options);
+    const url = this.buildURL(path);
+    return addQueryParams(url, query);
   }
 
   buildURL(path) {
@@ -148,7 +147,7 @@ export default class Adapter {
   }
 
   async makeRequest(request, options = {}) {
-    const { fetch, AbortController } = Adapter;
+    const { fetch, AbortController } = this.constructor;
     const cache = options.cache !== false && this.shouldCacheRequest(request);
 
     if (cache) {
@@ -158,7 +157,11 @@ export default class Adapter {
       }
     }
 
-    let [signal, teardown] = signalForRequest(request.signal, options.timeout, AbortController);
+    let [signal, teardown] = signalForRequest(
+      request.signal,
+      options.timeout,
+      AbortController
+    );
 
     if (signal) {
       request.signal = signal;
@@ -185,7 +188,7 @@ export default class Adapter {
   }
 
   async requestFor(params) {
-    const { Headers, Request } = Adapter;
+    const { Headers, Request } = this.constructor;
 
     params = Object.freeze(params);
 
