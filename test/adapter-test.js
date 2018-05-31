@@ -1,6 +1,5 @@
 import { module, test } from 'qunit';
-import { AbortController } from 'abortcontroller-polyfill/dist/cjs-ponyfill';
-import Adapter from '../node.js';
+import Adapter, { AbortController } from '../node';
 
 module('FetchAdapter', function(hooks) {
   hooks.beforeEach(function() {

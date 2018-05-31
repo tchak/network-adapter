@@ -1,9 +1,7 @@
 {
   "name": "network-adapter",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "main": "index.js",
-  "browser": "dist/browser-old.js",
-  "module": "main.js",
   "author": "Paul Chavard",
   "license": "MIT",
   "dependencies": {
